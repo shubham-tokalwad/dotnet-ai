@@ -10,6 +10,13 @@ string key = config["OpenAIKey"];
 IChatClient chatClient =
     new OpenAIClient(key).GetChatClient(model).AsIChatClient();
 
+builder.Services.AddSingleton(chatClient);
+builder.Services.AddTransient<AiChatService>();
+
+using IHost host = builder.Build();
+
+var aiService = host.Services.GetRequiredService<AiChatService>();
+
 // Start the conversation with context for the AI model
 List<ChatMessage> chatHistory =
     [
@@ -48,4 +55,36 @@ while (true)
     }
     chatHistory.Add(new ChatMessage(ChatRole.Assistant, response));
     Console.WriteLine();
+}
+
+while (true)
+{
+    Console.Write("You: ");
+
+    string? input = Console.ReadLine();
+
+    if (string.IsNullOrWhiteSpace(input))
+        continue;
+
+    if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
+        break;
+
+    string response = await aiService.AskAsync(input);
+
+    Console.WriteLine($"AI: {response}");
+}
+
+while (true)
+{
+    Console.Write("You: ");
+
+    string? input = Console.ReadLine();
+
+    if (string.IsNullOrWhiteSpace(input))
+        continue;
+
+    if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
+        break;
+
+    await aiService.AskAsync(input);
 }
